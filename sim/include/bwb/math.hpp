@@ -1,5 +1,6 @@
 #pragma once
 #include <cmath>
+#include <algorithm>
 
 namespace bwb{
     struct Vec3{
@@ -240,9 +241,9 @@ namespace bwb{
     
     inline Euler quat_to_euler(const Quat& q) {
         double e0 = q.e0, e1 = q.e1, e2 = q.e2, e3 = q.e3;
-        double phi = std::atan2(2 * (e0 * e1 + e2 * e3), 1 - 2 * (e1 * e1 + e2 * e2));
-        double theta = std::asin(2 * (e0 * e2 - e3 * e1));
-        double psi = std::atan2(2 * (e0 * e3 + e1 * e2), 1 - 2 * (e2 * e2 + e3 * e3));
+        double phi = std::atan2(2 * (e0 * e1 + e2 * e3), e0 * e0 - e1 * e1 - e2 * e2 - e3 * e3);
+        double theta = std::asin(std::clamp(2 * (e0 * e2 - e3 * e1), -1.0, 1.0));
+        double psi = std::atan2(2 * (e0 * e3 + e1 * e2), e0 * e0 - e1 * e1 - e2 * e2 - e3 * e3);
         return Euler(phi, theta, psi);
     }
 }
