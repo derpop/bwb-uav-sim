@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cmath>
+#include <string>
 #include "bwb/math.hpp"
 
 int failures = 0;
