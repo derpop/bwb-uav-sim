@@ -35,7 +35,9 @@ int main() {
     check_near(bwb::Vec3(1,1,1).normalize(), bwb::Vec3(1/std::sqrt(3), 1/std::sqrt(3), 1/std::sqrt(3)), 1e-6, "normalize test 5");
     check_near(-bwb::Vec3(1,0,0), bwb::Vec3(-1,0,0), 1e-6, "negation test");
     check_near(2.0 * bwb::Vec3(1,0,0), bwb::Vec3(2,0,0), 1e-6, "scalar multiplication test");
+        check_near(bwb::Vec3(1,0,0) * 2, bwb::Vec3(2,0,0), 1e-6, "scalar multiplication test");
     check_near(bwb::Vec3(1,0,0) / 2.0, bwb::Vec3(0.5,0,0), 1e-6, "scalar division test");
+    check_near(bwb::Vec3(1,2,3).dotProd(bwb::Vec3(4,-5,6)), 12.0, 1e-6, "dotProd test");
     std::cout << "Total failures: " << failures << std::endl;
     return failures == 0 ? 0 : 1;
 }
