@@ -30,9 +30,11 @@ int main() {
     check_near(bwb::Vec3(1,0,0).normalize(), bwb::Vec3(1,0,0), 1e-6, "normalize test 1");
     check_near(bwb::Vec3(0,1,0).normalize(), bwb::Vec3(0,1,0), 1e-6, "normalize test 2");
     check_near(bwb::Vec3(0,0,1).normalize(), bwb::Vec3(0,0,1), 1e-6, "normalize test 3");
-    check_near(bwb::Vec3(0,1,0).normalize(), bwb::Vec3(0,1,0), 1e-6, "normalize test 2");
-    check_near(bwb::Vec3(0,0,1).normalize(), bwb::Vec3(0,0,1), 1e-6, "normalize test 3");
     check_near(bwb::Vec3(1,0,0).normalize(), bwb::Vec3(1,0,0), 1e-6, "normalize test 4");
+    check_near(bwb::Vec3(1,1,1).normalize(), bwb::Vec3(1/std::sqrt(3), 1/std::sqrt(3), 1/std::sqrt(3)), 1e-6, "normalize test 5");
+    check_near(-bwb::Vec3(1,0,0), bwb::Vec3(-1,0,0), 1e-6, "negation test");
+    check_near(2.0 * bwb::Vec3(1,0,0), bwb::Vec3(2,0,0), 1e-6, "scalar multiplication test");
+    check_near(bwb::Vec3(1,0,0) / 2.0, bwb::Vec3(0.5,0,0), 1e-6, "scalar division test");
     std::cout << "Total failures: " << failures << std::endl;
     return failures == 0 ? 0 : 1;
 }
