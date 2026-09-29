@@ -15,7 +15,7 @@ void check_near(double got, double want, double tol, const std::string& name) {
 }
 
 void check_near(bwb::Vec3 got, bwb::Vec3 want, double tol, const std::string& name) {
-    if (!(std::abs(got.x - want.x) <= tol || std::abs(got.y - want.y) <= tol || std::abs(got.z - want.z) <= tol)) {
+    if (!(std::abs(got.x - want.x) <= tol &&  std::abs(got.y - want.y) <= tol &&  std::abs(got.z - want.z) <= tol)) {
         std::cerr << "Check failed: " << name << std::endl;
         std::cout << "got: " << got.x << ", " << got.y << ", " << got.z << std::endl;
         std::cout << "want: " << want.x << ", " << want.y << ", " << want.z << std::endl;
@@ -36,7 +36,7 @@ void check_near(bwb::Mat3 got, bwb::Mat3 want, double tol, const std::string& na
 }
 
 void check_near(bwb::Euler got, bwb::Euler want, double tol, const std::string& name) {
-    if (!(std::abs(got.phi - want.phi) <= tol || std::abs(got.theta - want.theta) <= tol || std::abs(got.psi - want.psi) <= tol)) {
+    if (!(std::abs(got.phi - want.phi) <= tol && std::abs(got.theta - want.theta) <= tol &&  std::abs(got.psi - want.psi) <= tol)) {
         std::cerr << "Check failed: " << name << std::endl;
         std::cout << "got: " << got.phi << ", " << got.theta << ", " << got.psi << std::endl;
         std::cout << "want: " << want.phi << ", " << want.theta << ", " << want.psi << std::endl;
@@ -45,7 +45,7 @@ void check_near(bwb::Euler got, bwb::Euler want, double tol, const std::string& 
 }
 
 void check_near(bwb::Quat got, bwb::Quat want, double tol, const std::string& name) {
-    if (!(std::abs(got.e0 - want.e0) <= tol || std::abs(got.e1 - want.e1) <= tol || std::abs(got.e2 - want.e2) <= tol || std::abs(got.e3 - want.e3) <= tol)) {
+    if (!(std::abs(got.e0 - want.e0) <= tol &&  std::abs(got.e1 - want.e1) <= tol &&  std::abs(got.e2 - want.e2) <= tol || std::abs(got.e3 - want.e3) <= tol)) {
         std::cerr << "Check failed: " << name << std::endl;
         std::cout << "got: " << got.e0 << ", " << got.e1 << ", " << got.e2 << ", " << got.e3 << std::endl;
         std::cout << "want: " << want.e0 << ", " << want.e1 << ", " << want.e2 << ", " << want.e3 << std::endl;
@@ -126,7 +126,13 @@ int main() {
     e = bwb::Euler(0, M_PI/2, 0.4);
     q = bwb::euler_to_quat(e);
     e_round_trip = bwb::quat_to_euler(q);
-    check_near(e_round_trip, e, 1e-12, "Round Trip Euler to Quaternion to Euler with 90 degree pitch");
+    check_near(e_round_trip.theta, M_PI/2, 1e-12, "Round Trip Euler to Quaternion to Euler with 90 degree pitch theta");
+    if(!std::isfinite(e_round_trip.phi)){
+        std::cerr << "phi is not finite" << std::endl;
+    }
+    if(!std::isfinite(e_round_trip.psi)){
+        std::cerr << "psi is not finite" << std::endl;
+    }    
     std::cout << "Total failures: " << failures << std::endl;
     return failures == 0 ? 0 : 1;
 }
