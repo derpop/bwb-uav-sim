@@ -66,9 +66,7 @@ namespace bwb{
             return Vec3(x / scalar, y / scalar, z / scalar);
         }
     };
-}
-    
-namespace bwb {
+
     struct Mat3{
         double m[3][3];
 
@@ -149,4 +147,45 @@ namespace bwb {
             );
         }
     };
+
+    struct Euler {
+        
+        double phi, theta, psi; 
+        // roll [rad], about body x, right wing down positive
+        // pitch [rad], about body y, nose up positive
+        // yaw [rad], about body z, right turn positive 
+        explicit Euler(double phi_, double theta_ , double psi_ )
+            : phi(phi_), theta(theta_), psi(psi_) {}
+
+        Euler() : phi(0), theta(0), psi(0) {}
+    };
+
+    inline Mat3 euler_to_dcm(const Euler& euler) {
+
+        const double cphi = std::cos(euler.phi),   sphi = std::sin(euler.phi);
+        const double cth  = std::cos(euler.theta), sth  = std::sin(euler.theta);
+        const double cpsi = std::cos(euler.psi),   spsi = std::sin(euler.psi);
+        //Step 1 Yaw psi about z(heading)
+
+        Mat3 R_psi = Mat3(
+            cpsi, spsi, 0,
+            -spsi,  cpsi, 0,
+            0,     0,    1
+        );
+
+        Mat3 R_theta = Mat3(
+            cth, 0, -sth,
+            0,   1,  0,
+            sth, 0,  cth
+        );
+
+        Mat3 R_phi = Mat3(
+            1, 0,   0,
+            0, cphi, sphi,
+            0,-sphi, cphi
+        );
+
+        return R_psi.transpose() * R_theta.transpose() * R_phi.transpose();
+    }
+
 }

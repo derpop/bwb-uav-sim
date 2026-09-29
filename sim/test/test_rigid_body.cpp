@@ -68,6 +68,14 @@ int main() {
     check_near((testing * testing2).transpose(), testing2.transpose() * testing.transpose(), 1e-6, "testing matrix multiplication transpose test");
     check_near(identity.determinant(), 1.0, 1e-6, "identity matrix determinant test");
     check_near(testing.determinant(), 0.0, 1e-6, "testing matrix determinant test");
+    check_near(bwb::Mat3(1,2,3, 4,5,6, 7,8,10).determinant(), -3.0, 1e-6, "testing matrix determinant test nonsingular");
+    // Euler to DCM test
+    check_near(bwb::euler_to_dcm(bwb::Euler(0,0,M_PI/2)) * bwb::Vec3(1,0,0), bwb::Vec3(0, 1 , 0),  1e-6, "Nose East");
+    check_near(bwb::euler_to_dcm(bwb::Euler(0,M_PI/6,0)) * bwb::Vec3(1,0,0), bwb::Vec3(cos(M_PI/6), 0 , -0.5),  1e-6, "Nose Up");
+    check_near(bwb::euler_to_dcm(bwb::Euler(M_PI/2,0,0)) * bwb::Vec3(0,1,0), bwb::Vec3(0, 0 , 1),  1e-6, "Right Wing Down");
+    bwb::Mat3 dcm = bwb::euler_to_dcm(bwb::Euler(0.3,-0.4,2.0));
+    check_near(dcm * dcm.transpose(), bwb::Mat3(), 1e-6, "DCM orthogonality test");
+    check_near(dcm.determinant(), 1.0, 1e-6, "DCM determinant test");
     std::cout << "Total failures: " << failures << std::endl;
     return failures == 0 ? 0 : 1;
 }
