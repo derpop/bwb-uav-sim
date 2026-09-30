@@ -2,7 +2,7 @@
 #include <cmath>
 #include <string>
 #include "bwb/math.hpp"
-
+#include "bwb/rigid_body.hpp"
 int failures = 0;
 
 void check_near(double got, double want, double tol, const std::string& name) {
@@ -86,6 +86,9 @@ int main() {
     check_near(identity.determinant(), 1.0, 1e-6, "identity matrix determinant test");
     check_near(testing.determinant(), 0.0, 1e-6, "testing matrix determinant test");
     check_near(bwb::Mat3(1,2,3, 4,5,6, 7,8,10).determinant(), -3.0, 1e-6, "testing matrix determinant test nonsingular");
+    testing = bwb::Mat3(1,2,3, 4,5,6, 7,8,-10);
+    check_near(testing.inverse() * testing, identity, 1e-6, "testing matrix inverse test");
+    check_near(testing * testing.inverse(), identity, 1e-6, "testing matrix inverse test");
     // Euler to DCM test
     check_near(bwb::euler_to_dcm(bwb::Euler(0,0,M_PI/2)) * bwb::Vec3(1,0,0), bwb::Vec3(0, 1 , 0),  1e-6, "Nose East");
     check_near(bwb::euler_to_dcm(bwb::Euler(0,M_PI/6,0)) * bwb::Vec3(1,0,0), bwb::Vec3(cos(M_PI/6), 0 , -0.5),  1e-6, "Nose Up");
@@ -134,7 +137,67 @@ int main() {
     if(!std::isfinite(e_round_trip.psi)){
         std::cerr << "psi is not finite" << std::endl;
         failures++;
-    }    
+    }
+        // ---- state_derivative tests ----
+    const bwb::Vec3 zero(0, 0, 0);
+    // 1. Position: heading east at 25 m/s -> moving east
+    {
+        bwb::State x;
+        x.att = bwb::euler_to_quat(bwb::Euler(0, 0, M_PI / 2));
+        x.vel_body = bwb::Vec3(25, 0, 0);
+        bwb::State dx = bwb::state_derivative(x, zero, zero, bwb::MassProps(1, 1, 2, 3, 0));
+        check_near(dx.pos_ned, bwb::Vec3(0, 25, 0), 1e-12, "EOM position: heading east");
+    }
+
+    // 2. Pitch-rate (transport) term: w_dot = q*u with no force
+    {
+        bwb::State x;
+        x.vel_body = bwb::Vec3(20, 0, 0);
+        x.omega = bwb::Vec3(0, 0.3, 0);
+        bwb::State dx = bwb::state_derivative(x, zero, zero, bwb::MassProps(1, 1, 2, 3, 0));
+        check_near(dx.vel_body, bwb::Vec3(0, 0, 6), 1e-12, "EOM velocity: w_dot = q*u");
+    }
+
+    // 3. Gravity: at rest, level, force = (0, 0, m*g) -> w_dot = g
+    {
+        const double m = 2.4, g = 9.81;
+        bwb::State x;
+        bwb::State dx = bwb::state_derivative(x, bwb::Vec3(0, 0, m * g), zero, bwb::MassProps(m, 1, 2, 3, 0));
+        check_near(dx.vel_body, bwb::Vec3(0, 0, g), 1e-12, "EOM velocity: gravity");
+    }
+
+    // 4. Quaternion rate: pure roll rate from identity -> e_dot = (0, p/2, 0, 0)
+    {
+        bwb::State x;
+        x.omega = bwb::Vec3(0.5, 0, 0);
+        bwb::State dx = bwb::state_derivative(x, zero, zero, bwb::MassProps(1, 1, 2, 3, 0));
+        check_near(dx.att, bwb::Quat(0, 0.25, 0, 0), 1e-12, "EOM quaternion rate: roll");
+    }
+
+    // 5. Euler's equations by hand (Jxz = 0): J = diag(1, 2, 3), omega = (1, 1, 1)
+    //    p_dot = (Jy-Jz)/Jx*q*r = -1, q_dot = (Jz-Jx)/Jy*p*r = 1, r_dot = (Jx-Jy)/Jz*p*q = -1/3
+    {
+        bwb::State x;
+        x.omega = bwb::Vec3(1, 1, 1);
+        bwb::State dx = bwb::state_derivative(x, zero, zero, bwb::MassProps(1, 1, 2, 3, 0));
+        check_near(dx.omega, bwb::Vec3(-1, 1, -1.0 / 3), 1e-12, "EOM rates: Euler equations, Jxz = 0");
+    }
+
+    // 6. Gamma form vs direct solve with the BWB inertia (Jxz != 0)
+    //    omega_dot = J^-1 * (-omega x (J omega) + M)
+    {
+        const double Jxz_bwb = -1;  // your answer from exercise 4
+        bwb::MassProps bwb_mass(2.4, 0.180, 0.098, 0.273, Jxz_bwb);
+        bwb::Mat3 J(bwb_mass.Jx, 0, -bwb_mass.Jxz,
+                    0, bwb_mass.Jy, 0,
+                    -bwb_mass.Jxz, 0, bwb_mass.Jz);
+        bwb::State x;
+        x.omega = bwb::Vec3(0.7, -1.2, 0.4);
+        const bwb::Vec3 M(0.3, -0.2, 0.1);
+        bwb::State dx = bwb::state_derivative(x, zero, M, bwb_mass);
+        bwb::Vec3 expectedVec = J.inverse() * (-x.omega.crossProd(J * x.omega) + M);
+        check_near(dx.omega, expectedVec, 1e-12, "EOM rates: Gamma form vs J inverse");
+    }
     std::cout << "Total failures: " << failures << std::endl;
     return failures == 0 ? 0 : 1;
 }

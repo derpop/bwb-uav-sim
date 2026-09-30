@@ -147,6 +147,21 @@ namespace bwb{
                 m[2][0] * other.x + m[2][1] * other.y + m[2][2] * other.z
             );
         }
+
+        Mat3 inverse() const {
+            double det = determinant();
+            return Mat3(
+                (m[1][1] * m[2][2] - m[1][2] * m[2][1]) / det,
+                (m[0][2] * m[2][1] - m[0][1] * m[2][2]) / det,
+                (m[0][1] * m[1][2] - m[0][2] * m[1][1]) / det,
+                (m[1][2] * m[2][0] - m[1][0] * m[2][2]) / det,
+                (m[0][0] * m[2][2] - m[0][2] * m[2][0]) / det,
+                (m[0][2] * m[1][0] - m[0][0] * m[1][2]) / det,
+                (m[1][0] * m[2][1] - m[1][1] * m[2][0]) / det,
+                (m[0][1] * m[2][0] - m[0][0] * m[2][1]) / det,
+                (m[0][0] * m[1][1] - m[0][1] * m[1][0]) / det
+            );
+        }
     };
 
     struct Euler {
@@ -206,6 +221,11 @@ namespace bwb{
             double n = norm();
             return Quat(e0 / n, e1 / n, e2 / n, e3 / n);
         }
+
+        Quat operator*(double k) const {
+            return Quat(e0 * k, e1 * k, e2 * k, e3 * k);
+        }
+
     };
 
     inline Quat quat_multiply(const Quat& q1, const Quat& q2) {

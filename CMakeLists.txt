@@ -11,7 +11,9 @@ add_compile_options(-Wall -Wextra -Wshadow)
 enable_testing()
 
 add_executable(test_rigid_body sim/test/test_rigid_body.cpp)
-target_include_directories(test_rigid_body PRIVATE sim/include)
+add_library(bwb_sim sim/src/rigid_body.cpp)
+target_include_directories(bwb_sim PUBLIC sim/include)
+target_link_libraries(test_rigid_body PRIVATE bwb_sim)
 
 add_test(NAME rigid_body COMMAND test_rigid_body)
 
