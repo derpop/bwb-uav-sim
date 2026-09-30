@@ -251,6 +251,77 @@ int main() {
         check_near(x.omega, bwb::Vec3(0.5, 0, 0), 1e-9, "roll: angular velocity");
         check_near(x.pos_ned, bwb::Vec3(0, 0, 0), 1e-9, "roll: position unchanged");
     }
+
+    // Torque-free conservation test
+    {
+        bwb::MassProps mass_props(2.4, 0.180, 0.098, 0.273, 0.005);   // BWB
+        bwb::Mat3 J(mass_props.Jx, 0, -mass_props.Jxz,
+                    0, mass_props.Jy, 0,
+                    -mass_props.Jxz, 0, mass_props.Jz);
+
+        bwb::State start;
+        start.omega = bwb::Vec3(1, -2, 0.7);   // tumbling, no moment applied
+
+        // What must stay constant: angular momentum in NED, and rotational energy
+        const bwb::Vec3 H0 = bwb::rot_body_to_ned(start.att) * (J * start.omega);
+        const double T0 = 0.5 * start.omega.dotProd(J * start.omega);
+
+        const double dt = 0.001;
+        const int steps = 20000;   // 20 s
+        bwb::State x = start;
+        for (int i = 0; i < steps; i++) {
+            x = bwb::rk4_step(x, zero, zero, mass_props, dt);
+        }
+
+        const bwb::Vec3 H1 = bwb::rot_body_to_ned(x.att) * (J * x.omega);
+        const double T1 = 0.5 * x.omega.dotProd(J * x.omega);
+
+        check_near((H1 - H0).magnitude() / H0.magnitude(), 0.0, 1e-8, "conservation: angular momentum (NED)");
+        check_near(std::abs(T1 - T0) / T0, 0.0, 1e-8, "conservation: rotational energy");
+        // Sanity: the body really did tumble (omega changed), so the test isn't trivial
+        if ((x.omega - start.omega).magnitude() < 0.1) {
+            std::cerr << "conservation: omega barely changed, test is trivial" << std::endl;
+            failures++;
+        }
+    }
+    // Dzhanibekov effect test unstable
+    {
+        bwb::State start;
+        start.omega = bwb::Vec3(0.001, 3, 0.001);   // initial angular velocity
+        bwb::MassProps mass_props(11.0, 0.8244, 1.135, 1.759, 0);   // BWB
+        bwb::Mat3 J(mass_props.Jx, 0, -mass_props.Jxz,
+                    0, mass_props.Jy, 0,
+                    -mass_props.Jxz, 0, mass_props.Jz);
+
+        const double dt = 0.001;
+        const int steps = 20000;   // 20 s
+        bwb::State x = start;
+        double q_min = x.omega.y;
+        for (int i = 0; i < steps; i++) {
+            x = bwb::rk4_step(x, zero, zero, mass_props, dt);
+            q_min = std::min(q_min, x.omega.y);
+        }
+        check_near(q_min, -3.0, 0.1, "intermediate axis: pitch spin flips over");
+    }
+        // Dzhanibekov effect test stable
+    {
+        bwb::State start;
+        start.omega = bwb::Vec3(0.001, 0.001, 3);   // initial angular velocity
+        bwb::MassProps mass_props(11.0, 0.8244, 1.135, 1.759, 0);   // BWB
+        const double dt = 0.001;
+        const int steps = 20000;   // 20 s
+        bwb::State x = start;
+        double r_min = x.omega.z;
+        double p_max = 0.0;
+        for (int i = 0; i < steps; i++) {
+            x = bwb::rk4_step(x, zero, zero, mass_props, dt);
+            r_min = std::min(r_min, x.omega.z);
+            p_max = std::max(p_max, std::abs(x.omega.x));
+        }
+        check_near(r_min, 3.0, 0.1, "intermediate axis: stable");
+        check_near(p_max, 0.0, 0.01, "intermediate axis: z spin wobble stays small");
+    }
+ 
     std::cout << "Total failures: " << failures << std::endl;
     return failures == 0 ? 0 : 1;
 }
