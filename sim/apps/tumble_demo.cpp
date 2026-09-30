@@ -13,7 +13,7 @@ int main() {
         const double dt = 0.01;
         const int steps = 2000;   // 20 s
         bwb::State x = start;
-        std::cout << "t,p,q,r,phi,theta,psi,T" << std::endl;
+        std::cout << "t,p,q,r,phi,theta,psi,T_drift" << std::endl;
         const double T0 = 0.5 * start.omega.dotProd(J * start.omega);
         for (int i = 0; i <= steps; i++) {
             bwb::Euler att = bwb::quat_to_euler(x.att);
