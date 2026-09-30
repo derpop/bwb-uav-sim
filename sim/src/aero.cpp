@@ -51,7 +51,7 @@ namespace bwb{
         p.C_n_da = 0.06;
         p.C_n_dr = -0.032;
         return p;
-    };
+    }
     double stall_sigma(double alpha, const AeroParams& p){
         const double A = std::exp(-p.M * (alpha - p.alpha0));
         const double B = std::exp(p.M * (alpha + p.alpha0));
