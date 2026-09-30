@@ -52,6 +52,13 @@ void check_near(bwb::Quat got, bwb::Quat want, double tol, const std::string& na
         failures++;
     }
 }
+bwb::State runRk4(bwb::State start, bwb::Vec3 force, bwb::Vec3 moment, double dt, bwb::MassProps mass_props, int steps) {
+    bwb::State x = start;
+    for (int i = 0; i < steps; i++) {
+        x = bwb::rk4_step(x, force, moment, mass_props, dt);
+    }
+    return x;
+}
 
 int main() {
     //Vector Checks
@@ -288,11 +295,7 @@ int main() {
     {
         bwb::State start;
         start.omega = bwb::Vec3(0.001, 3, 0.001);   // initial angular velocity
-        bwb::MassProps mass_props(11.0, 0.8244, 1.135, 1.759, 0);   // BWB
-        bwb::Mat3 J(mass_props.Jx, 0, -mass_props.Jxz,
-                    0, mass_props.Jy, 0,
-                    -mass_props.Jxz, 0, mass_props.Jz);
-
+        bwb::MassProps mass_props(11.0, 0.8244, 1.135, 1.759, 0);   // Aerosonde
         const double dt = 0.001;
         const int steps = 20000;   // 20 s
         bwb::State x = start;
@@ -307,7 +310,7 @@ int main() {
     {
         bwb::State start;
         start.omega = bwb::Vec3(0.001, 0.001, 3);   // initial angular velocity
-        bwb::MassProps mass_props(11.0, 0.8244, 1.135, 1.759, 0);   // BWB
+        bwb::MassProps mass_props(11.0, 0.8244, 1.135, 1.759, 0);   // Aerosonde
         const double dt = 0.001;
         const int steps = 20000;   // 20 s
         bwb::State x = start;
@@ -318,10 +321,26 @@ int main() {
             r_min = std::min(r_min, x.omega.z);
             p_max = std::max(p_max, std::abs(x.omega.x));
         }
-        check_near(r_min, 3.0, 0.1, "intermediate axis: stable");
+        check_near(r_min, 3.0, 0.01, "intermediate axis: stable");
         check_near(p_max, 0.0, 0.01, "intermediate axis: z spin wobble stays small");
     }
- 
+
+    //RK4 order Test
+    {
+        bwb::State start;
+        start.omega = bwb::Vec3(1, -2, 0.7);   // initial angular velocity
+        bwb::Vec3 force = bwb::Vec3();
+        bwb::Vec3 moment = bwb::Vec3();
+        bwb::MassProps mass_props(2.4, 0.180, 0.098, 0.273, 0.005);   // BWB
+        bwb::State ref = runRk4(start, force, moment, 0.0003125, mass_props, 6400);
+        bwb::State a = runRk4(start, force, moment, 0.02, mass_props, 100);
+        bwb::State b = runRk4(start, force, moment, 0.01, mass_props, 200);
+        check_near((a.omega - ref.omega).magnitude(), 0.0, 1e-6, "RK4 order: a close to ref");
+        check_near((b.omega - ref.omega).magnitude(), 0.0, 1e-6, "RK4 order: b close to ref");
+        double err_a = (a.omega - ref.omega).magnitude();
+        double err_b = (b.omega - ref.omega).magnitude();
+        check_near(err_a/ err_b, 16.0, 1.0, "RK4 order: error ratio a/b close to 16");
+    }
     std::cout << "Total failures: " << failures << std::endl;
     return failures == 0 ? 0 : 1;
 }
