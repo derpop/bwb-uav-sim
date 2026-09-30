@@ -186,7 +186,7 @@ int main() {
     // 6. Gamma form vs direct solve with the BWB inertia (Jxz != 0)
     //    omega_dot = J^-1 * (-omega x (J omega) + M)
     {
-        const double Jxz_bwb = -1;  // your answer from exercise 4
+        const double Jxz_bwb = 0.005;  //Script gives -0.005 in x-aft axes which flips the sign of \int xz \,dm
         bwb::MassProps bwb_mass(2.4, 0.180, 0.098, 0.273, Jxz_bwb);
         bwb::Mat3 J(bwb_mass.Jx, 0, -bwb_mass.Jxz,
                     0, bwb_mass.Jy, 0,
@@ -197,6 +197,59 @@ int main() {
         bwb::State dx = bwb::state_derivative(x, zero, M, bwb_mass);
         bwb::Vec3 expectedVec = J.inverse() * (-x.omega.crossProd(J * x.omega) + M);
         check_near(dx.omega, expectedVec, 1e-12, "EOM rates: Gamma form vs J inverse");
+    }
+    //Coast Test
+    {
+    bwb::State start = bwb::State();
+    start.vel_body = bwb::Vec3(25, 0, 0);
+    start.att = bwb::euler_to_quat(bwb::Euler(0, 0, M_PI/4));
+    bwb::MassProps mass_props = bwb::MassProps(1,1,2,3,0);
+    bwb::Vec3 force = bwb::Vec3(0, 0, 0);
+    bwb::Vec3 moment = bwb::Vec3(0, 0, 0);
+    bwb::State x = start;
+    for (int i = 0; i < 1000; i++){
+        x = bwb::rk4_step(x, force, moment, mass_props, 0.01);
+    }
+    const double d = 250.0 * std::cos(M_PI / 4);   // 176.777 m
+    check_near(x.pos_ned, bwb::Vec3(d, d, 0), 1e-9, "coasting: position");
+    check_near(x.vel_body, start.vel_body, 1e-12, "coasting: velocity unchanged");
+    check_near(x.att, start.att, 1e-12, "coasting: attitude unchanged");
+    }
+    // Free fall test:
+    {
+
+        bwb::State start = bwb::State();
+        start.vel_body = bwb::Vec3(0, 0, 0);
+        start.att = bwb::euler_to_quat(bwb::Euler(0.3, -0.4, 2.0));
+        bwb::MassProps mass_props = bwb::MassProps(1,1,2,3,0);
+        bwb::Vec3 force = bwb::rot_body_to_ned(start.att).transpose() * bwb::Vec3(0, 0, mass_props.m * 9.81);
+        bwb::Vec3 moment = bwb::Vec3(0, 0, 0);
+        bwb::State x = start;
+        const double dt = 0.01, t = 3.0, g = 9.81;
+        const int steps = 300;
+        for (int i = 0; i < steps; i++){
+            x = bwb::rk4_step(x, force, moment, mass_props, dt);
+        }
+        check_near(x.pos_ned, bwb::Vec3(0, 0, (1/2.0 * g * t * t)), 1e-9, "free fall: position");
+        check_near(bwb::rot_body_to_ned(x.att) * x.vel_body, bwb::Vec3(0, 0, g * t), 1e-9, "free fall: velocity (NED)");
+        check_near(x.att, start.att, 1e-12, "free fall: attitude unchanged");
+    }
+    // Roll test
+    {
+        bwb::State start = bwb::State();
+        start.omega = bwb::Vec3(0.5, 0, 0);
+        bwb::MassProps mass_props = bwb::MassProps(1,1,2,3,0);
+        bwb::Vec3 force = bwb::Vec3(0, 0, 0);
+        bwb::Vec3 moment = bwb::Vec3(0, 0, 0);
+        bwb::State x = start;
+        const double dt = 0.01;
+        const int steps = 200;
+        for (int i = 0; i < steps; i++){
+            x = bwb::rk4_step(x, force, moment, mass_props, dt);
+        }
+        check_near(bwb::quat_to_euler(x.att), bwb::Euler(1.0, 0 , 0), 1e-9, "roll: attitude");
+        check_near(x.omega, bwb::Vec3(0.5, 0, 0), 1e-9, "roll: angular velocity");
+        check_near(x.pos_ned, bwb::Vec3(0, 0, 0), 1e-9, "roll: position unchanged");
     }
     std::cout << "Total failures: " << failures << std::endl;
     return failures == 0 ? 0 : 1;

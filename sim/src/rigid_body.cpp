@@ -23,6 +23,35 @@ namespace bwb{
         att = Quat();
         omega = Vec3();
     }
+    State State::operator+(const State& other) const {
+        State result;
+        result.pos_ned = pos_ned + other.pos_ned;
+        result.vel_body = vel_body + other.vel_body;
+        result.att = att + other.att;
+        result.omega = omega + other.omega;
+        return result;
+    }
+    
+    State State::operator-(const State& other) const {
+        State result;
+        result.pos_ned = pos_ned - other.pos_ned;
+        result.vel_body = vel_body - other.vel_body;
+        result.att = att - other.att;
+        result.omega = omega - other.omega;
+        return result;
+    }
+    
+    State State::operator*(double scalar) const {
+        State result;
+        result.pos_ned = pos_ned * scalar;
+        result.vel_body = vel_body * scalar;
+        result.att = att * scalar;
+        result.omega = omega * scalar;
+        return result;
+    }
+    State operator*(double scalar, const State& state){
+        return state * scalar;
+    }
     State state_derivative(const State&x, const Vec3& force_body, 
             const Vec3& moment_body, const MassProps& mass){
         State dx;
@@ -44,5 +73,14 @@ namespace bwb{
         dx.omega = Vec3(p_dot, q_dot, r_dot);
         return dx;
     }
-
+    State rk4_step(const State& x, const Vec3& force, const Vec3& moment,
+         const MassProps& mass, double dt){
+        State k1 = state_derivative(x, force, moment, mass);
+        State k2 = state_derivative(x + 0.5 * dt * k1, force, moment, mass);
+        State k3 = state_derivative(x + 0.5 * dt * k2, force, moment, mass);
+        State k4 = state_derivative(x + dt * k3, force, moment, mass);
+        State next = x + (dt / 6.0) * (k1 + 2.0*k2 + 2.0*k3 + k4);
+        next.att = next.att.normalized();
+        return next;
+    }
 }

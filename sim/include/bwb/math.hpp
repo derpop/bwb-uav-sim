@@ -225,6 +225,12 @@ namespace bwb{
         Quat operator*(double k) const {
             return Quat(e0 * k, e1 * k, e2 * k, e3 * k);
         }
+        Quat operator+(const Quat& other) const {
+            return Quat(e0 + other.e0, e1 + other.e1, e2 + other.e2, e3 + other.e3);
+        }
+        Quat operator-(const Quat& other) const {
+            return Quat(e0 - other.e0, e1 - other.e1, e2 - other.e2, e3 - other.e3);
+        }
 
     };
 
