@@ -1,6 +1,5 @@
 #include "bwb/aero.hpp"
 
-constexpr double g = 9.81;
 namespace bwb{
 
     AeroParams aerosonde_params(){

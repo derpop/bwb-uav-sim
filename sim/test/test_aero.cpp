@@ -116,6 +116,61 @@ int main() {
         check_near(out.moment, bwb::Vec3(0, -11.9514, 0), 1e-3, "J: post-stall alpha 40");
         check_near(out.alpha, deg(40), 1e-3, "J: post-stall alpha 40");
     }
+    {
+        bwb::State x;
+        x.vel_body = bwb::Vec3(25 * std::cos(deg(5)), 25 * std::sin(deg(5)), 0);
+        x.att = bwb::euler_to_quat(bwb::Euler(deg(0), deg(0), deg(0)));
+        auto out = bwb::forces_moments(x, c, no_wind, p, aero_mass);
+        check_near(out.force, bwb::Vec3(-90.2544, -18.6412, 71.4029), 1e-3, "Pre Flip: force when beta 5");
+        check_near(out.moment, bwb::Vec3(-6.6095, -0.9680,13.7698), 1e-3, "Pre Flip: moment when beta 5");
+        x.vel_body =  bwb::Vec3(25 * std::cos(deg(5)), -25 * std::sin(deg(5)), 0);
+        out = bwb::forces_moments(x, c, no_wind, p, aero_mass);
+        check_near(out.force, bwb::Vec3(-90.2544, 18.6412, 71.4029), 1e-3, "Post Flip: force when beta -5");
+        check_near(out.moment, bwb::Vec3(6.6095, -0.9680,-13.7698), 1e-3, "Post Flip: moment when beta -5");
+    }
+    {
+        bwb::State x;
+        x.vel_body = bwb::Vec3(25, 0, 0);
+        x.att = bwb::euler_to_quat(bwb::Euler(deg(0), deg(0), deg(0)));
+        auto out = bwb::forces_moments(x, c, no_wind, p, aero_mass);
+        bwb::Vec3 f1 = out.force;
+        bwb::Vec3 m1 = out.moment;
+        check_near(out.force, bwb::Vec3(-90.2544, 0, 71.4029), 1e-3, "A: full force, level");
+        check_near(out.moment, bwb::Vec3(0, -0.9680, 0), 1e-3, "A: full moment, level");
+        bwb::Vec3 f_g = bwb::Vec3(0,0,aero_mass.m * bwb::g);
+        x.vel_body = bwb::Vec3(50, 0, 0);
+        out = bwb::forces_moments(x, c, no_wind, p, aero_mass);
+        check_near(out.force - f_g, (f1-f_g)* 4, 1e-3, "Va^2 scaling: force");    
+        check_near(out.moment, m1* 4, 1e-3, "Va^2 scaling: moment");
+    }
+    {
+        bwb::State x;
+        x.vel_body = bwb::Vec3(25, 0, 0);
+        bwb::Vec3 wind = bwb::Vec3(25, 0, 0);
+        x.att = bwb::euler_to_quat(bwb::Euler(deg(0), deg(0), deg(0)));
+        auto out = bwb::forces_moments(x, c, wind, p, aero_mass);
+        check_near(out.Va, 0, 1e-3, "Va = 0: tailwind cancels");
+        check_near(out.force, bwb::Vec3(0, 0, aero_mass.m * bwb::g), 1e-3, "Force = mg, tailwind cancels");
+        check_near(out.moment, bwb::Vec3(0, 0, 0), 1e-3, "Moment = 0: tailwind cancels");
+        check_near(out.alpha, 0, 1e-3, "Alpha = 0: tailwind cancels");
+        check_near(out.beta, 0, 1e-3, "Beta = 0: tailwind cancels");
+    }
+    {
+        bwb::State x;
+        x.vel_body = bwb::Vec3(25, 0, 0);
+        x.att = bwb::euler_to_quat(bwb::Euler(deg(0), deg(0), deg(0)));
+        auto out = bwb::forces_moments(x, c, no_wind, p, aero_mass);
+        check_near(out.force, bwb::Vec3(-90.2544, 0, 71.4029), 1e-3, "A: full force, level");
+        check_near(out.moment, bwb::Vec3(0, -0.9680, 0), 1e-3, "A: full moment, level");
+        bwb::Vec3 f1 = out.force;
+        bwb::Vec3 m1 = out.moment;
+        x.att = bwb::euler_to_quat(bwb::Euler(deg(0), deg(0), deg(90)));
+        out = bwb::forces_moments(x, c, no_wind, p, aero_mass);
+        check_near(out.force, f1, 1e-3, "rotated A force, level");
+        check_near(out.moment, m1, 1e-3, "rotated A full moment, level");
+    }
+
+
     std::cerr << "Total failures: " << failures << std::endl;
     return failures == 0? 0 : 1;
 }

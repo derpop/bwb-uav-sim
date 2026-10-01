@@ -2,6 +2,7 @@
 #include "bwb/rigid_body.hpp"
 
 namespace bwb{
+    constexpr double g = 9.81; // m/s^2
     struct AeroParams{
         //Geometry and air
         double S; //m^2
