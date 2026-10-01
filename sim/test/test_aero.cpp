@@ -123,16 +123,14 @@ int main() {
         auto out = bwb::forces_moments(x, c, no_wind, p, aero_mass);
         bwb::Vec3 f_pre = out.force;
         bwb::Vec3 m_pre = out.moment;
-        //check_near(out.force, bwb::Vec3(-90.2544, -18.6412, 71.4029), 1e-3, "Pre Flip: force when beta 5");
-        //check_near(out.moment, bwb::Vec3(-6.6095, -0.9680,13.7698), 1e-3, "Pre Flip: moment when beta 5");
         x.vel_body =  bwb::Vec3(25 * std::cos(deg(5)), -25 * std::sin(deg(5)), 0);
         out = bwb::forces_moments(x, c, no_wind, p, aero_mass);
-        check_near(out.force.x, f_pre.x, 1e-3, "Pre Flip: force when beta 5");
-        check_near(out.force.y, -f_pre.y, 1e-3, "Pre Flip: force when beta 5");
-        check_near(out.force.z, f_pre.z, 1e-3, "Pre Flip: force when beta 5");
-        check_near(out.moment.x, -m_pre.x, 1e-3, "Pre Flip: moment when beta 5");
-        check_near(out.moment.y, m_pre.y, 1e-3, "Pre Flip: moment when beta 5");
-        check_near(out.moment.z, -m_pre.z, 1e-3, "Pre Flip: moment when beta 5");
+        check_near(out.force.x, f_pre.x, 1e-3, "Symmetry: force.x");
+        check_near(out.force.y, -f_pre.y, 1e-3, "Symmetry: force.y");
+        check_near(out.force.z, f_pre.z, 1e-3, "Symmetry: force.z");
+        check_near(out.moment.x, -m_pre.x, 1e-3, "Symmetry: moment.x ");
+        check_near(out.moment.y, m_pre.y, 1e-3, "Symmetry: moment.y");
+        check_near(out.moment.z, -m_pre.z, 1e-3, "Symmetry: moment.z");
     }
     {
         bwb::State x;
