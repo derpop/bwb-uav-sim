@@ -72,4 +72,6 @@ namespace bwb{
     double stall_sigma(double alpha, const AeroParams& p);
     double C_L_of_alpha(double alpha, const AeroParams& p);
     double C_D_of_alpha(double alpha, const AeroParams& p);
+    ForcesMoments forces_moments(const State& x, const Controls& u, const Vec3& wind_ned,
+    const AeroParams& p, const MassProps& mass);
 }

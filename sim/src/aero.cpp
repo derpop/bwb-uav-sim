@@ -1,4 +1,6 @@
 #include "bwb/aero.hpp"
+
+constexpr double g = 9.81;
 namespace bwb{
 
     AeroParams aerosonde_params(){
@@ -68,5 +70,29 @@ namespace bwb{
         const double AR = p.b * p.b / p.S;
         const double C_L_lin  = p.C_L_0 + p.C_L_alpha * alpha;
         return p.C_D_p + C_L_lin * C_L_lin / (M_PI * AR * p.e);
+    }
+
+    ForcesMoments forces_moments(const State& x, const Controls& u, const Vec3& wind_ned,
+    const AeroParams& p, const MassProps& mass){
+        ForcesMoments out;
+        const Mat3 Rt = rot_body_to_ned(x.att).transpose();
+        Vec3 f_gravity = Rt * Vec3(0, 0, mass.m * g);
+        Vec3 wind_body = Rt * wind_ned;
+        Vec3 V_body = x.vel_body - wind_body;
+        const double ur = V_body.x;
+        const double vr = V_body.y;
+        const double wr = V_body.z;
+        const double Va = V_body.magnitude();
+        double alpha = 0;
+        double beta = 0;
+        if(Va > 1e-6){
+            alpha = std::atan2(wr, ur);
+            beta = std::asin(vr/ Va);
+        }
+        out.Va = Va;
+        out.alpha = alpha;
+        out.beta = beta;
+        out.force = f_gravity;
+        return out;
     }
 }
