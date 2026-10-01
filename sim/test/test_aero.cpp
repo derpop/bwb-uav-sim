@@ -27,60 +27,95 @@ int main() {
     {
         bwb::State x;
         x.vel_body = bwb::Vec3(25, 0, 0);
+        x.att = bwb::euler_to_quat(bwb::Euler(deg(0), deg(0), deg(0)));
+        auto out = bwb::forces_moments(x, c, no_wind, p, aero_mass);
+        check_near(out.force, bwb::Vec3(-90.2544, 0, 71.4029), 1e-3, "A: full force, level");
+        check_near(out.moment, bwb::Vec3(0, -0.9680, 0), 1e-3, "A: full moment, level");
+    }
+    {
+        bwb::State x;
+        x.vel_body = bwb::Vec3(25, 0, 0);
         x.att = bwb::euler_to_quat(bwb::Euler(deg(20), deg(30), deg(40)));
         auto out = bwb::forces_moments(x, c, no_wind, p, aero_mass);
-        check_near(out.force, bwb::Vec3(-66.2175, 39.2270, 107.7753), 1e-3, "B: gravity, tilted");
+        check_near(out.force, bwb::Vec3(-156.4719, 39.2270, 46.7432), 1e-3, "B: full force, tilted");
     }
     {
         bwb::State x;
-        x.vel_body = bwb::Vec3(25, 0, 0);
+        x.vel_body = bwb::Vec3(25 * std::cos(deg(5)), 0, 25 * std::sin(deg(5)));
+        bwb::Controls ctrl;
+        ctrl.de = -0.1;
+        x.att = bwb::euler_to_quat(bwb::Euler(0, 0, 0));
+        auto out = bwb::forces_moments(x, ctrl, no_wind, p, aero_mass);
+        check_near(out.force, bwb::Vec3(-79.7999, 0, -2.5359), 1e-3, "C: AOA 5 degrees, elevator -0.1");
+        check_near(out.moment, bwb::Vec3(0, -0.2708, 0), 1e-3, "C: AOA 5 degrees, elevator -0.1");
+    }
+    {
+        bwb::State x;
+        x.vel_body = bwb::Vec3(25 * std::cos(deg(5)), 25 * std::sin(deg(5)), 0);
         x.att = bwb::euler_to_quat(bwb::Euler(deg(0), deg(0), deg(0)));
         auto out = bwb::forces_moments(x, c, no_wind, p, aero_mass);
-        check_near(out.Va, 25 , 1e-3, "Air Data Va");
-        check_near(out.alpha, 0, 1e-3, "Air Data alpha");
-        check_near(out.beta, 0, 1e-3, "Air Data beta");
+        check_near(out.force, bwb::Vec3(-90.2544, -18.6412, 71.4029), 1e-3, "D: force when beta 5");
+        check_near(out.moment, bwb::Vec3(-6.6095, -0.9680,13.7698), 1e-3, "D: moment when beta 5");
     }
     {
         bwb::State x;
+        x.vel_body = bwb::Vec3(25, 0, 0);
+        x.omega = bwb::Vec3(0.5, 0.2, 0.1);
+        x.att = bwb::euler_to_quat(bwb::Euler(deg(0), deg(0), deg(0)));
+        auto out = bwb::forces_moments(x, c, no_wind, p, aero_mass);
+        check_near(out.force, bwb::Vec3(-90.2544, 0, 71.4029), 1e-3, "E: Rated A");
+        check_near(out.moment, bwb::Vec3(-4.2400, -1.0812, -0.8772), 1e-3, "E: Rated A");
+    }
+    {
+        bwb::State x;
+        x.vel_body = bwb::Vec3(25, 0, 0);
+        bwb::Controls ctrl;
+        ctrl.da = 0.1;
+        ctrl.dr = 0.1;
+        x.att = bwb::euler_to_quat(bwb::Euler(deg(0), deg(0), deg(0)));
+        auto out = bwb::forces_moments(x, ctrl, no_wind, p, aero_mass);
+        check_near(out.force, bwb::Vec3(-90.2544, -3.7055, 71.4029), 1e-3, "F: force, aileron + rudder 0.1");
+        check_near(out.moment, bwb::Vec3(11.6764, -0.9680, 1.7672), 1e-3, "F: moment, aileron + rudder 0.1");
+    }
+    {
+        bwb::State x;
+        x.vel_body = bwb::Vec3(25, 0, 0);
+        bwb::Controls ctrl;
+        ctrl.dt = 0.5;
+        x.att = bwb::euler_to_quat(bwb::Euler(deg(0), deg(0), deg(0)));
+        auto out = bwb::forces_moments(x, ctrl, no_wind, p, aero_mass);
+        check_near(out.force, bwb::Vec3(115.3969, 0, 71.4029), 1e-3, "G: full force, throttle 0.5");
+        check_near(out.moment, bwb::Vec3(0, -0.9680, 0), 1e-3, "G: full moment, throttle 0.5");
+    }
+    {
+        bwb::State x;
+        x.vel_body = bwb::Vec3(25, 0, 0);
+        bwb::Vec3 wind = bwb::Vec3(-5, 0, 0);
+        x.att = bwb::euler_to_quat(bwb::Euler(deg(0), deg(0), deg(0)));
+        auto out = bwb::forces_moments(x, c, wind, p, aero_mass);
+        check_near(out.force, bwb::Vec3(-129.9663,0, 44.5487), 1e-3, "H: Headwind north");
+        check_near(out.moment, bwb::Vec3(0, -1.3939, 0), 1e-3, "H: Headwind north");
+        check_near(out.Va, 30, 1e-3, "H: Headwind north");
+    }
+    {
+        bwb::State x;
+        bwb::Vec3 wind = bwb::Vec3(0, -5, 0);
         x.vel_body = bwb::Vec3(25, 0, 0);
         x.att = bwb::euler_to_quat(bwb::Euler(deg(0), deg(0), deg(0)));
-        bwb::Vec3 wind(-5, 0, 0);
         auto out = bwb::forces_moments(x, c, wind, p, aero_mass);
-        check_near(out.Va, 30 , 1e-3, "Headwind north");
+        check_near(out.force, bwb::Vec3(-93.8646, -43.8528, 68.9616), 1e-3, "I: East Crosswind");
+        check_near(out.moment, bwb::Vec3(-15.5486, -1.0067, 32.3929), 1e-3, "I: East Crosswind");
+        check_near(out.Va, 25.4951, 1e-3, "I: East Crosswind");
+        check_near(out.beta, 0.19740, 1e-3, "I: East Crosswind");
     }
     {
         bwb::State x;
-        x.vel_body = bwb::Vec3(25, 0, 0);
+        x.vel_body = bwb::Vec3(25 * std::cos(deg(40)), 0, 25 * std::sin(deg(40)));
         x.att = bwb::euler_to_quat(bwb::Euler(deg(0), deg(0), deg(0)));
-        bwb::Vec3 wind(0, -5, 0);
-        auto out = bwb::forces_moments(x, c, wind, p, aero_mass);
-        check_near(out.Va, 25.4951 , 1e-3, "Crosswind east Va");
-        check_near(out.beta, 0.19740, 1e-3, "Crosswind east beta");
+        auto out = bwb::forces_moments(x, c, no_wind, p, aero_mass);
+        check_near(out.moment, bwb::Vec3(0, -11.9514, 0), 1e-3, "J: post-stall alpha 40");
+        check_near(out.alpha, deg(40), 1e-3, "J: post-stall alpha 40");
     }
-    {
-        bwb::State x;
-        x.vel_body = bwb::Vec3(25, 0, 0);
-        x.att = bwb::euler_to_quat(bwb::Euler(deg(0), deg(0), deg(90)));
-        bwb::Vec3 wind(0, -5, 0);
-        auto out = bwb::forces_moments(x, c, wind, p, aero_mass);
-        check_near(out.Va, 30 , 1e-3, "Heading east into Headwind east Va");
-        check_near(out.beta, 0, 1e-3, "Heading east into Headwind east beta");
-    }
-    {
-        bwb::State x;
-        x.vel_body = bwb::Vec3(25, 0, 0);
-        x.att = bwb::euler_to_quat(bwb::Euler(deg(0), deg(0), deg(0)));
-        bwb::Vec3 wind(25, 0, 0);
-        auto out = bwb::forces_moments(x, c, wind, p, aero_mass);
-        check_near(out.Va, 0 , 1e-3, "No airspeed Va");
-        check_near(out.alpha, 0, 1e-3, "No airspeed alpha");
-        check_near(out.beta, 0, 1e-3, "No airspeed beta");
-        if(!std::isfinite(out.force.x) || !std::isfinite(out.force.y) || !std::isfinite(out.force.z)){
-            std::cerr << "Non-finite force detected" << std::endl;
-            ++failures;
-        }
-    }
-
     std::cerr << "Total failures: " << failures << std::endl;
     return failures == 0? 0 : 1;
 }

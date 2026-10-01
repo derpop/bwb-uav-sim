@@ -85,14 +85,45 @@ namespace bwb{
         const double Va = V_body.magnitude();
         double alpha = 0;
         double beta = 0;
+        Vec3 f_aero;
+        Vec3 m_aero;
         if(Va > 1e-6){
             alpha = std::atan2(wr, ur);
             beta = std::asin(vr/ Va);
+            const double P = x.omega.x;
+            const double Q = x.omega.y;
+            const double R = x.omega.z;
+            const double p_hat = P * p.b / (2 * Va);
+            const double qbar_S = 0.5 * p.rho * Va * Va * p.S;
+            const double q_hat = Q * p.c / (2 * Va);
+            const double r_hat = R * p.b / (2 * Va);
+            const double C_L = C_L_of_alpha(alpha, p) + p.C_L_q * q_hat + p.C_L_de * u.de;
+            const double C_D = C_D_of_alpha(alpha, p) + p.C_D_q * q_hat + p.C_D_de * u.de;
+            const double L = qbar_S * C_L;
+            const double D = qbar_S * C_D;
+            const double fx = -D * std::cos(alpha) + L * std::sin(alpha);
+            const double fz = -D * std::sin(alpha) - L * std::cos(alpha);
+            const double fy = qbar_S * (p.C_Y_0 + p.C_Y_beta * beta + p.C_Y_p * p_hat
+            + p.C_Y_r * r_hat + p.C_Y_da * u.da + p.C_Y_dr * u.dr);
+
+            const double l_roll = qbar_S * p.b *(p.C_l_0 + p.C_l_beta * beta + p.C_l_p * p_hat
+            + p.C_l_r * r_hat + p.C_l_da * u.da+ p.C_l_dr * u.dr);
+
+            const double M_pitch =  qbar_S * p.c *(p.C_m_0 + p.C_m_alpha * alpha + 
+                p.C_m_q * q_hat + p.C_m_de * u.de);
+
+            const double N_yaw = qbar_S * p.b *(p.C_n_0 + p.C_n_beta * beta + p.C_n_p * p_hat
+            + p.C_n_r * r_hat + p.C_n_da * u.da+ p.C_n_dr * u.dr);
+            f_aero = Vec3(fx, fy, fz);
+            m_aero = Vec3(l_roll, M_pitch, N_yaw);
         }
+        const double F_prop = 0.5 * p.rho * p.S_prop * p.C_prop * ((p.k_motor * u.dt)*(p.k_motor * u.dt) - Va* Va);
+        const double l_prop = -p.k_T_p * (p.k_Omega * u.dt)* (p.k_Omega * u.dt);
+        out.force = f_gravity + f_aero + Vec3(F_prop, 0, 0);
+        out.moment = m_aero + Vec3(l_prop, 0, 0);
         out.Va = Va;
         out.alpha = alpha;
         out.beta = beta;
-        out.force = f_gravity;
         return out;
     }
 }
