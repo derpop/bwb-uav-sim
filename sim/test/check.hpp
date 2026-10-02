@@ -64,3 +64,9 @@ inline bwb::State runRk4(bwb::State start, bwb::Vec3 force, bwb::Vec3 moment, do
     }
     return x;
 }
+inline void check_true(bool condition, const std::string& name) {
+    if (!condition) {
+        std::cerr << "Check failed: " << name << std::endl;
+        failures++;
+    }
+}

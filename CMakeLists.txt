@@ -14,14 +14,16 @@ add_executable(test_rigid_body sim/test/test_rigid_body.cpp)
 add_executable(tumble_demo sim/apps/tumble_demo.cpp)
 add_executable(pitch_demo sim/apps/pitch_demo.cpp)
 add_executable(test_aero sim/test/test_aero.cpp)
-add_library(bwb_sim sim/src/rigid_body.cpp sim/src/aero.cpp)
-
+add_executable(test_trim sim/test/test_trim.cpp)
+add_library(bwb_sim sim/src/rigid_body.cpp sim/src/aero.cpp sim/src/trim.cpp)
 
 target_include_directories(bwb_sim PUBLIC sim/include)
 target_link_libraries(test_rigid_body PRIVATE bwb_sim)
 target_link_libraries(tumble_demo PRIVATE bwb_sim)
 target_link_libraries(pitch_demo PRIVATE bwb_sim)
 target_link_libraries(test_aero PRIVATE bwb_sim)
+target_link_libraries(test_trim PRIVATE bwb_sim)
 
 add_test(NAME rigid_body COMMAND test_rigid_body)
 add_test(NAME aero COMMAND test_aero)
+add_test(NAME trim COMMAND test_trim)
