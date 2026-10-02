@@ -7,7 +7,7 @@
 double deg(double d) { return d * M_PI / 180.0; }
 
 namespace {
-    void print_row(const double& t, const bwb::State& x, const bwb::ForcesMoments& out) {
+    void print_row(double t, const bwb::State& x, const bwb::ForcesMoments& out) {
         bwb::Euler att = bwb::quat_to_euler(x.att);
         const double Va = out.Va;
         const double alpha = out.alpha;
