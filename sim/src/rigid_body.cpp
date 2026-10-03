@@ -73,12 +73,18 @@ namespace bwb{
         dx.omega = Vec3(p_dot, q_dot, r_dot);
         return dx;
     }
+
     State rk4_step(const State& x, const Vec3& force, const Vec3& moment,
          const MassProps& mass, double dt){
-        State k1 = state_derivative(x, force, moment, mass);
-        State k2 = state_derivative(x + 0.5 * dt * k1, force, moment, mass);
-        State k3 = state_derivative(x + 0.5 * dt * k2, force, moment, mass);
-        State k4 = state_derivative(x + dt * k3, force, moment, mass);
+        return rk4_step(x, dt, [&](const State& s) { return state_derivative(s, force, moment, mass); });
+    }
+    // Perform a single Runge-Kutta 4th order step for the state given a derivative function.
+    // I did it this way because my test calls could stay the same and i get the new functionality of being able to pass a custom derivative function.
+    State rk4_step(const State& x, double dt, const std::function<State(const State&)>& deriv){
+        State k1 = deriv(x);
+        State k2 = deriv(x + 0.5 * dt * k1);
+        State k3 = deriv(x + 0.5 * dt * k2);
+        State k4 = deriv(x + dt * k3);
         State next = x + (dt / 6.0) * (k1 + 2.0*k2 + 2.0*k3 + k4);
         next.att = next.att.normalized();
         return next;
