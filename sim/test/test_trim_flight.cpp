@@ -95,8 +95,7 @@ int main() {
             x = bwb::rk4_step(x, dt, deriv);
             if (-x.pos_ned.z > peak_alt) peak_alt = -x.pos_ned.z;
         }
-        // 5 mm tolerance: rk4_step holds force/moment fixed across its four stages,
-        // so the settled altitude shifts slightly with dt (0.7224 at 0.01, 0.7240 at 0.001)
+        //With stage rk4: converges with 1e-6 tolerance
         check_near(-x.pos_ned.z - start_alt, 0.7242238, 1e-6, "Kick: settles ~0.72 m higher");
         check_near(peak_alt - start_alt, 0.95, 0.05, "Kick: peak altitude between 0.9 and 1.0 m");
         check_near(x.vel_body.x, result.x.vel_body.x, 1e-4, "Kick: u back to trim");
