@@ -73,10 +73,13 @@ namespace bwb{
         dx.omega = Vec3(p_dot, q_dot, r_dot);
         return dx;
     }
+
     State rk4_step(const State& x, const Vec3& force, const Vec3& moment,
          const MassProps& mass, double dt){
         return rk4_step(x, dt, [&](const State& s) { return state_derivative(s, force, moment, mass); });
     }
+    // Perform a single Runge-Kutta 4th order step for the state given a derivative function.
+    // I did it this way because my test calls could stay the same and i get the new functionality
     State rk4_step(const State& x, double dt, const std::function<State(const State&)>& deriv){
         State k1 = deriv(x);
         State k2 = deriv(x + 0.5 * dt * k1);

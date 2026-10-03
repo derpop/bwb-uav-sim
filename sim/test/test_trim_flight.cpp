@@ -109,6 +109,6 @@ int main() {
     double h3 = kick_altitude(0.005, p, aero_mass);
     const double ratio = (h1 - h2)/(h2 - h3);
     std::cout << "Dynamic forces: ratio of altitude differences = " << ratio << std::endl;
-    check_true(ratio > 12, "Dynamic forces: ratio of altitude differences > 12");
+    check_true(ratio > 12, "Dynamic forces: ratio of altitude differences > 12 ");
     return failures == 0 ? 0 : 1;
 }
